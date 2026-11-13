@@ -167,7 +167,10 @@ void SecretStore::setSecretValue(ConnectionSettings &conn, const TQString &setti
 			s.remove(key);
 		else
 			s[key] = value;
-		conn.setStrMap("vpn", "secrets", s);
+		if (s.isEmpty())
+			conn.remove("vpn", "secrets");
+		else
+			conn.setStrMap("vpn", "secrets", s);
 		return;
 	}
 	conn.setStr(setting, key, value);
@@ -258,6 +261,14 @@ void SecretStore::fillAgentOwned(ConnectionSettings &conn)
 	TQStringList settings = secretSettings();
 	for (TQStringList::const_iterator it = settings.begin(); it != settings.end(); ++it) {
 		if (!conn.has(*it))
+			continue;
+		/* only open the wallet if the user owns one of the secrets */
+		bool owned = false;
+		TQStringList keys = secretKeys(conn, *it);
+		for (TQStringList::const_iterator k = keys.begin(); k != keys.end(); ++k)
+			if (secretFlags(conn, *it, *k) & NM_SECRET_FLAG_AGENT_OWNED)
+				owned = true;
+		if (!owned)
 			continue;
 		SecretMap m;
 		if (!load(conn.uuid(), *it, &m))

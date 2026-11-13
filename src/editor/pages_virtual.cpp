@@ -448,7 +448,8 @@ void VlanPage::load(const ConnectionSettings &conn)
 	m_parent->setEditText(conn.str("vlan", "parent"));
 	m_id->setValue(conn.uint("vlan", "id"));
 	m_iface->setText(conn.interfaceName());
-	m_nameEdited = !conn.interfaceName().isEmpty();
+	/* only suggest a name for new VLANs; NetworkManager may name it */
+	m_nameEdited = !conn.interfaceName().isEmpty() || !conn.str("vlan", "parent").isEmpty();
 	uint flags = conn.uint("vlan", "flags", 1);
 	m_reorder->setChecked(flags & 0x1);
 	m_gvrp->setChecked(flags & 0x2);

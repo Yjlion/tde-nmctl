@@ -148,28 +148,28 @@ VpnPage::VpnPage(TQWidget *parent)
 
 	/* OpenVPN */
 	m_ovpn = new TQGroupBox(2, TQt::Horizontal, i18n("OpenVPN"), this);
-	new TQLabel(i18n("&Authentication:"), m_ovpn);
+	new TQLabel(i18n("Authentication:"), m_ovpn);
 	m_ovpnType = new TQComboBox(false, m_ovpn);
 	m_ovpnType->insertItem(i18n("Certificates (TLS)"));
 	m_ovpnType->insertItem(i18n("Password"));
 	m_ovpnType->insertItem(i18n("Password with certificates (TLS)"));
 	m_ovpnType->insertItem(i18n("Static key"));
 	connect(m_ovpnType, TQ_SIGNAL(activated(int)), TQ_SLOT(slotOpenVpnType(int)));
-	new TQLabel(i18n("&CA certificate:"), m_ovpn);
+	new TQLabel(i18n("CA certificate:"), m_ovpn);
 	m_ca = new KURLRequester(m_ovpn);
-	new TQLabel(i18n("User certi&ficate:"), m_ovpn);
+	new TQLabel(i18n("User certificate:"), m_ovpn);
 	m_cert = new KURLRequester(m_ovpn);
-	new TQLabel(i18n("Private &key:"), m_ovpn);
+	new TQLabel(i18n("Private key:"), m_ovpn);
 	m_key = new KURLRequester(m_ovpn);
-	new TQLabel(i18n("Key pa&ssword:"), m_ovpn);
+	new TQLabel(i18n("Key password:"), m_ovpn);
 	m_certPass = new SecretEdit(m_ovpn, 0, true);
-	new TQLabel(i18n("S&tatic key:"), m_ovpn);
+	new TQLabel(i18n("Static key:"), m_ovpn);
 	m_staticKey = new KURLRequester(m_ovpn);
-	new TQLabel(i18n("TLS a&uth key:"), m_ovpn);
+	new TQLabel(i18n("TLS auth key:"), m_ovpn);
 	m_ta = new KURLRequester(m_ovpn);
-	new TQLabel(i18n("P&ort:"), m_ovpn);
+	new TQLabel(i18n("Port:"), m_ovpn);
 	m_port = new KLineEdit(m_ovpn);
-	new TQLabel(i18n("De&vice type:"), m_ovpn);
+	new TQLabel(i18n("Device type:"), m_ovpn);
 	m_dev = new TQComboBox(false, m_ovpn);
 	m_dev->insertItem("TUN");
 	m_dev->insertItem("TAP");
@@ -394,9 +394,6 @@ void VpnPage::save(ConnectionSettings &conn)
 	}
 	conn.setStrMap("vpn", "data", data);
 
-	/* secrets: keep only those of shown fields and the table */
-	TQMap<TQString, TQString> secrets = conn.strMap("vpn", "secrets");
-	conn.setStrMap("vpn", "secrets", secrets);
 	if (v && v->passwordKey)
 		m_password->saveVpn(conn, v->passwordKey);
 	if (v && v->groupPasswordKey)
@@ -612,8 +609,11 @@ TQString WireGuardPage::validate() const
 {
 	if (m_iface->text().stripWhiteSpace().isEmpty())
 		return i18n("The WireGuard interface needs a name, for example wg0.");
-	if (!(m_privateKey->flags() & (NM_SECRET_FLAG_NOT_SAVED | NM_SECRET_FLAG_NOT_REQUIRED)) &&
-	    m_privateKey->value().stripWhiteSpace().length() != 44)
+	/* an empty key of the user's own is asked for when connecting */
+	TQString key = m_privateKey->value().stripWhiteSpace();
+	bool optional = (m_privateKey->flags() & (NM_SECRET_FLAG_NOT_SAVED | NM_SECRET_FLAG_NOT_REQUIRED)) ||
+	                (key.isEmpty() && (m_privateKey->flags() & NM_SECRET_FLAG_AGENT_OWNED));
+	if (!optional && key.length() != 44)
 		return i18n("The WireGuard private key must be 44 characters long (base64). "
 		            "Use Generate to create one.");
 	for (int r = 0; r < m_peers->numRows(); ++r) {

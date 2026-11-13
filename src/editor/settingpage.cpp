@@ -137,6 +137,18 @@ SecretEdit::SecretEdit(TQWidget *parent, const char *name, bool allowNotRequired
 	setSecret(TQString::null, defaultFlags());
 }
 
+static bool s_newConnection = true;
+
+void SecretEdit::setEditingNewConnection(bool isNew)
+{
+	s_newConnection = isNew;
+}
+
+uint SecretEdit::missingFlags()
+{
+	return s_newConnection ? SecretEdit::defaultFlags() : (uint)NM_SECRET_FLAG_NONE;
+}
+
 uint SecretEdit::defaultFlags()
 {
 	return NmctlSettings::storeInWallet() ? NM_SECRET_FLAG_AGENT_OWNED : NM_SECRET_FLAG_NONE;
@@ -190,7 +202,7 @@ void SecretEdit::slotShow(bool on)
 
 void SecretEdit::load(const ConnectionSettings &conn, const TQString &setting, const TQString &key)
 {
-	uint f = conn.has(setting, key + "-flags") ? conn.uint(setting, key + "-flags") : defaultFlags();
+	uint f = conn.has(setting, key + "-flags") ? conn.uint(setting, key + "-flags") : missingFlags();
 	setSecret(conn.str(setting, key), f);
 }
 
@@ -203,15 +215,18 @@ void SecretEdit::save(ConnectionSettings &conn, const TQString &setting, const T
 void SecretEdit::loadVpn(const ConnectionSettings &conn, const TQString &key)
 {
 	TQMap<TQString, TQString> data = conn.strMap("vpn", "data");
-	uint f = data.contains(key + "-flags") ? data[key + "-flags"].toUInt() : defaultFlags();
+	uint f = data.contains(key + "-flags") ? data[key + "-flags"].toUInt() : missingFlags();
 	setSecret(conn.strMap("vpn", "secrets")[key], f);
 }
 
 void SecretEdit::saveVpn(ConnectionSettings &conn, const TQString &key) const
 {
 	TQMap<TQString, TQString> data = conn.strMap("vpn", "data");
-	data[key + "-flags"] = TQString::number(flags());
-	conn.setStrMap("vpn", "data", data);
+	/* do not add "0" flags for secrets the plugin does not use */
+	if (flags() != NM_SECRET_FLAG_NONE || !value().isEmpty() || data.contains(key + "-flags")) {
+		data[key + "-flags"] = TQString::number(flags());
+		conn.setStrMap("vpn", "data", data);
+	}
 	SecretStore::setSecretValue(conn, "vpn", key, value());
 }
 

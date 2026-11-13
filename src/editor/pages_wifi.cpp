@@ -228,7 +228,9 @@ WifiSecurityPage::WifiSecurityPage(TQWidget *parent)
 	connect(m_type, TQ_SIGNAL(activated(int)), TQ_SLOT(slotType(int)));
 
 	m_stack = new TQWidgetStack(this);
-	top->addWidget(m_stack, 1);
+	top->addWidget(m_stack);
+	TQHBoxLayout *pmfRow = new TQHBoxLayout(top, 6);
+	top->addStretch(1);
 
 	/* none / OWE */
 	m_nonePage = new TQWidget(m_stack);
@@ -298,7 +300,6 @@ WifiSecurityPage::WifiSecurityPage(TQWidget *parent)
 	v->addWidget(m_eap);
 	m_stack->addWidget(m_eapPage);
 
-	TQHBoxLayout *pmfRow = new TQHBoxLayout(top, 6);
 	m_pmf = new TQComboBox(false, this);
 	m_pmf->insertItem(i18n("Default"));
 	m_pmf->insertItem(i18n("Disabled"));
@@ -379,7 +380,7 @@ void WifiSecurityPage::load(const ConnectionSettings &conn)
 	uint idx = conn.uint("802-11-wireless-security", "wep-tx-keyidx");
 	m_wepIndex->setCurrentItem(TQMIN(3u, idx));
 	uint wf = conn.has("802-11-wireless-security", "wep-key-flags")
-	          ? conn.uint("802-11-wireless-security", "wep-key-flags") : SecretEdit::defaultFlags();
+	          ? conn.uint("802-11-wireless-security", "wep-key-flags") : SecretEdit::missingFlags();
 	m_wepKey->setSecret(conn.str("802-11-wireless-security", TQString("wep-key%1").arg(idx)), wf);
 	m_wepAuth->setCurrentItem(conn.str("802-11-wireless-security", "auth-alg") == "shared" ? 1 : 0);
 	m_leapUser->setText(conn.str("802-11-wireless-security", "leap-username"));
@@ -462,13 +463,17 @@ TQString WifiSecurityPage::validate() const
 		TQString p = m_psk->value();
 		if (m_psk->flags() & (NM_SECRET_FLAG_NOT_SAVED | NM_SECRET_FLAG_NOT_REQUIRED))
 			return TQString::null;
+		/* the user's own password may be asked for when connecting */
+		if (p.isEmpty() && (m_psk->flags() & NM_SECRET_FLAG_AGENT_OWNED))
+			return TQString::null;
 		bool hex = p.length() == 64 && TQString(p).replace(TQRegExp("[0-9a-fA-F]"), "").isEmpty();
 		if (t == SecWpaPsk && !hex && (p.length() < 8 || p.length() > 63))
 			return i18n("A WPA password must have 8 to 63 characters, or be 64 hexadecimal digits.");
 		if (t == SecSae && p.isEmpty())
 			return i18n("Enter the WPA3 password.");
 	}
-	if (t == SecWepKey && !(m_wepKey->flags() & NM_SECRET_FLAG_NOT_SAVED)) {
+	if (t == SecWepKey && !(m_wepKey->flags() & NM_SECRET_FLAG_NOT_SAVED) &&
+	    !(m_wepKey->value().isEmpty() && (m_wepKey->flags() & NM_SECRET_FLAG_AGENT_OWNED))) {
 		TQString k = m_wepKey->value();
 		bool hex = TQString(k).replace(TQRegExp("[0-9a-fA-F]"), "").isEmpty();
 		if (!((k.length() == 5 || k.length() == 13) || (hex && (k.length() == 10 || k.length() == 26))))

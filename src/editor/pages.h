@@ -97,7 +97,8 @@ class EthernetPage : public SettingPage
 {
 	TQ_OBJECT
 public:
-	EthernetPage(TQWidget *parent = 0);
+	/** withDevice: show the device (interface-name); not for DSL */
+	EthernetPage(bool withDevice = true, TQWidget *parent = 0);
 	virtual void load(const ConnectionSettings &conn);
 	virtual void save(ConnectionSettings &conn);
 	virtual TQString validate() const;
@@ -105,6 +106,7 @@ private slots:
 	void slotNegotiation(int);
 private:
 	TQComboBox *m_iface;
+	bool m_withDevice;
 	KLineEdit *m_mac;
 	TQComboBox *m_cloned;
 	TQSpinBox *m_mtu;
@@ -364,6 +366,7 @@ private:
 	TQCheckBox *m_bsdcomp;
 	TQCheckBox *m_deflate;
 	TQCheckBox *m_lcpEcho;
+	bool m_hasParent;
 };
 
 /** gsm and cdma */

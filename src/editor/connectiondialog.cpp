@@ -24,7 +24,7 @@
 
 ConnectionDialog::ConnectionDialog(const ConnectionSettings &conn, const TQString &path,
                                    TQWidget *parent, const char *name)
-	: KDialogBase(IconList, TQString::null, Ok | Cancel | Help, Ok, parent, name, true, true),
+	: KDialogBase(Tabbed, TQString::null, Ok | Cancel | Help, Ok, parent, name, true, true),
 	  m_conn(conn), m_path(path), m_activate(false), m_general(0), m_wifi(0), m_ipv4(0)
 {
 	TQString type = conn.type();
@@ -34,6 +34,7 @@ ConnectionDialog::ConnectionDialog(const ConnectionSettings &conn, const TQStrin
 	bool port = !conn.str("connection", "slave-type").isEmpty() ||
 	            !conn.str("connection", "port-type").isEmpty();
 
+	SecretEdit::setEditingNewConnection(path.isEmpty());
 	m_general = new GeneralPage();
 	addPage(m_general, i18n("General"), "tde-nmctl");
 
@@ -61,7 +62,7 @@ ConnectionDialog::ConnectionDialog(const ConnectionSettings &conn, const TQStrin
 		addPage(new MobilePage(type == "gsm"), i18n("Mobile Broadband"), "tde-nmctl-modem");
 	} else if (type == "pppoe") {
 		addPage(new PppoePage(), i18n("DSL/PPPoE"), "tde-nmctl-wired");
-		addPage(new EthernetPage(), i18n("Ethernet"), "tde-nmctl-wired");
+		addPage(new EthernetPage(false), i18n("Ethernet"), "tde-nmctl-wired");
 	} else if (type == "infiniband") {
 		addPage(new InfinibandPage(), i18n("InfiniBand"), "tde-nmctl-wired");
 	} else {
@@ -84,12 +85,14 @@ ConnectionDialog::ConnectionDialog(const ConnectionSettings &conn, const TQStrin
 	for (SettingPage *p = m_pages.first(); p; p = m_pages.next())
 		p->load(m_conn);
 
-	resize(TQMAX(720, sizeHint().width()), TQMAX(560, sizeHint().height()));
+	resize(TQMAX(640, sizeHint().width()), TQMAX(560, sizeHint().height()));
 }
 
 void ConnectionDialog::addPage(SettingPage *page, const TQString &title, const TQString &icon)
 {
-	TQFrame *frame = KDialogBase::addPage(title, title, BarIcon(icon, TDEIcon::SizeMedium));
+	Q_UNUSED(icon);
+	/* tabs, like nm-connection-editor */
+	TQFrame *frame = KDialogBase::addPage(title);
 	TQVBoxLayout *l = new TQVBoxLayout(frame, 0, 0);
 	page->reparent(frame, TQPoint(0, 0));
 	l->addWidget(page);

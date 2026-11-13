@@ -84,6 +84,12 @@ public:
 
 	/** the storage for new connections: wallet (default) or all users */
 	static uint defaultFlags();
+	/** NetworkManager leaves out *-flags that are 0, so a missing value
+	 *  means "all users" for an existing connection, but the user's
+	 *  default for a new one; the connection editor sets this */
+	static void setEditingNewConnection(bool isNew);
+	/** the flags to assume when a connection has no *-flags value */
+	static uint missingFlags();
 
 signals:
 	void changed();

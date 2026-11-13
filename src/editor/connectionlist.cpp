@@ -53,7 +53,7 @@ ConnectionList::ConnectionList(TQWidget *parent, const char *name)
 	m_list->addColumn(i18n("Last Used"));
 	m_list->setAllColumnsShowFocus(true);
 	m_list->setRootIsDecorated(true);
-	m_list->setSorting(0);
+	m_list->setSorting(-1);
 	m_list->setResizeMode(TQListView::NoColumn);
 	m_list->setColumnWidth(0, 280);
 	m_list->setColumnWidth(1, 120);
@@ -154,21 +154,26 @@ void ConnectionList::reload()
 	TQMap<TQString, TDEListViewItem *> groups;
 	m_list->clear();
 
+	/* the groups in nm-connection-editor's order */
+	TQStringList order;
+	order << NMText::connectionGroup("802-3-ethernet") << NMText::connectionGroup("802-11-wireless")
+	      << NMText::connectionGroup("vpn") << NMText::connectionGroup("gsm")
+	      << NMText::connectionGroup("bridge") << NMText::connectionGroup("loopback");
+	TQListViewItem *last = 0;
+	for (TQStringList::const_iterator g = order.begin(); g != order.end(); ++g) {
+		TDEListViewItem *item = new TDEListViewItem(m_list, last, *g);
+		item->setOpen(true);
+		item->setSelectable(false);
+		groups[*g] = item;
+		last = item;
+	}
+
 	const NMConnectionList &all = NMClient::self()->connections();
 	for (NMConnectionList::const_iterator it = all.begin(); it != all.end(); ++it) {
 		TQString type = (*it).type();
 		if (type == "loopback" || type == "generic")
 			continue;
-		TQString group = NMText::connectionGroup(type);
-		if (!groups.contains(group)) {
-			TDEListViewItem *g = new TDEListViewItem(m_list, group);
-			g->setOpen(true);
-			g->setSelectable(false);
-			TQFont f = m_list->font();
-			f.setBold(true);
-			groups[group] = g;
-		}
-		TDEListViewItem *item = new TDEListViewItem(groups[group], (*it).id());
+		TDEListViewItem *item = new TDEListViewItem(groups[NMText::connectionGroup(type)], (*it).id());
 		item->setPixmap(ColName, SmallIcon(NMText::connectionIcon(type)));
 		item->setText(ColUsed, lastUsed((*it).timestamp()));
 		item->setText(ColPath, (*it).path);
@@ -177,6 +182,12 @@ void ConnectionList::reload()
 			m_list->setCurrentItem(item);
 			m_list->ensureItemVisible(item);
 		}
+	}
+	for (TQMap<TQString, TDEListViewItem *>::iterator g = groups.begin(); g != groups.end(); ++g) {
+		if (!g.data()->childCount())
+			delete g.data();
+		else
+			g.data()->sortChildItems(ColName, true);
 	}
 	m_pendingSelect = TQString::null;
 	updateStates();

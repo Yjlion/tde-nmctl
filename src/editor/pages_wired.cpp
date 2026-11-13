@@ -26,15 +26,19 @@
 /* Ethernet                                                               */
 /* ---------------------------------------------------------------------- */
 
-EthernetPage::EthernetPage(TQWidget *parent)
-	: SettingPage(parent, "EthernetPage")
+EthernetPage::EthernetPage(bool withDevice, TQWidget *parent)
+	: SettingPage(parent, "EthernetPage"), m_withDevice(withDevice)
 {
 	TQGridLayout *g = new TQGridLayout(this, 9, 2, 8, 6);
 	int row = 0;
 
 	m_iface = new TQComboBox(true, this);
 	fillInterfaces(m_iface, NM_DEVICE_TYPE_ETHERNET);
-	addRow(g, row++, i18n("&Device:"), m_iface);
+	TQLabel *ifaceLabel = addRow(g, row++, i18n("&Device:"), m_iface);
+	if (!withDevice) {
+		m_iface->hide();
+		ifaceLabel->hide();
+	}
 
 	m_mac = new KLineEdit(this);
 	addRow(g, row++, i18n("Restrict to &MAC address:"), m_mac);
@@ -129,7 +133,8 @@ void EthernetPage::load(const ConnectionSettings &conn)
 void EthernetPage::save(ConnectionSettings &conn)
 {
 	conn.ensure("802-3-ethernet");
-	conn.setStr("connection", "interface-name", interfaceText(m_iface));
+	if (m_withDevice)
+		conn.setStr("connection", "interface-name", interfaceText(m_iface));
 	conn.setStr("802-3-ethernet", "mac-address", m_mac->text().stripWhiteSpace().upper());
 	conn.remove("802-3-ethernet", "cloned-mac-address");
 	conn.setStr("802-3-ethernet", "assigned-mac-address", macChoice(m_cloned));
@@ -209,13 +214,13 @@ TQString WiredSecurityPage::validate() const
 /* ---------------------------------------------------------------------- */
 
 PppoePage::PppoePage(TQWidget *parent)
-	: SettingPage(parent, "PppoePage")
+	: SettingPage(parent, "PppoePage"), m_hasParent(false)
 {
 	TQGridLayout *g = new TQGridLayout(this, 9, 2, 8, 6);
 	int row = 0;
 	m_parent = new TQComboBox(true, this);
 	fillInterfaces(m_parent, NM_DEVICE_TYPE_ETHERNET, false);
-	addRow(g, row++, i18n("&Parent device:"), m_parent);
+	addRow(g, row++, i18n("&Device:"), m_parent);
 	m_user = new KLineEdit(this);
 	addRow(g, row++, i18n("&Username:"), m_user);
 	m_password = new SecretEdit(this);
@@ -237,7 +242,10 @@ PppoePage::PppoePage(TQWidget *parent)
 
 void PppoePage::load(const ConnectionSettings &conn)
 {
-	TQString parent = conn.str("pppoe", "parent", conn.interfaceName());
+	/* the Ethernet device is pppoe.parent if set (then interface-name is
+	 * the name of the PPP interface), otherwise connection.interface-name */
+	m_hasParent = !conn.str("pppoe", "parent").isEmpty();
+	TQString parent = m_hasParent ? conn.str("pppoe", "parent") : conn.interfaceName();
 	if (!parent.isEmpty())
 		m_parent->setEditText(parent);
 	m_user->setText(conn.str("pppoe", "username"));
@@ -252,12 +260,19 @@ void PppoePage::load(const ConnectionSettings &conn)
 void PppoePage::save(ConnectionSettings &conn)
 {
 	conn.ensure("pppoe");
-	conn.ensure("ppp");
 	TQString parent = m_parent->currentText().stripWhiteSpace();
-	conn.setStr("pppoe", "parent", parent);
+	if (m_hasParent)
+		conn.setStr("pppoe", "parent", parent);
+	else
+		conn.setStr("connection", "interface-name", parent);
 	conn.setStr("pppoe", "username", m_user->text().stripWhiteSpace());
 	m_password->save(conn, "pppoe", "password");
 	conn.setStr("pppoe", "service", m_service->text().stripWhiteSpace());
+	/* leave the ppp setting out while it has its default values */
+	if (!conn.has("ppp") && !m_mppe->isChecked() && m_bsdcomp->isChecked() && m_deflate->isChecked() &&
+	    !m_lcpEcho->isChecked())
+		return;
+	conn.ensure("ppp");
 	conn.setBool("ppp", "require-mppe", m_mppe->isChecked());
 	conn.setBool("ppp", "nobsdcomp", !m_bsdcomp->isChecked());
 	conn.setBool("ppp", "nodeflate", !m_deflate->isChecked());
