@@ -1,0 +1,13 @@
+[Desktop Entry]
+Encoding=UTF-8
+Type=Application
+Exec=tde-nmctl-tray
+Icon=tde-nmctl
+X-DocPath=tde-nmctl/index.html
+Terminal=false
+
+Name=Network
+GenericName=Network Status in the System Tray
+Comment=Connect to wired, Wi-Fi and VPN networks from the system tray
+
+Categories=Qt;TDE;Network;Applet;

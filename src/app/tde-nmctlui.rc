@@ -1,0 +1,14 @@
+<!DOCTYPE kpartgui SYSTEM "kpartgui.dtd">
+<kpartgui name="tde-nmctl" version="1">
+<MenuBar>
+  <Menu name="file"><text>&amp;File</text>
+    <Action name="file_new" />
+  </Menu>
+  <Menu name="view"><text>&amp;View</text>
+    <Action name="view_redisplay" />
+  </Menu>
+  <Menu name="settings"><text>&amp;Settings</text>
+    <Action name="open_kcontrol" append="configure_merge"/>
+  </Menu>
+</MenuBar>
+</kpartgui>

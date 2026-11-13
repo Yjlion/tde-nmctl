@@ -1,0 +1,19 @@
+[Desktop Entry]
+Encoding=UTF-8
+Exec=tdecmshell nmctl
+Icon=tde-nmctl
+Type=Application
+
+X-TDE-ModuleType=Library
+X-TDE-Library=nmctl
+X-TDE-RootOnly=false
+X-TDE-ParentApp=kcontrol
+X-DocPath=tde-nmctl/index.html
+
+Name=Network Connections
+Comment=NetworkManager connections: wired, Wi-Fi, VPN, mobile broadband
+Keywords=network;networkmanager;wifi;wireless;ethernet;vpn;wireguard;openvpn;hotspot;bond;bridge;vlan;dsl;mobile;ip;dns;hostname;
+
+# X-TDE-settings-network: Control Center, Internet & Network
+# X-TDE-systemsettings-network-networksettings: System Settings, Network & Connectivity > Network Settings
+Categories=Qt;TDE;X-TDE-settings-network;X-TDE-systemsettings-network-networksettings;

@@ -1,0 +1,28 @@
+[!Global!]
+IconName=tde-nmctl
+Comment=Network
+
+[connected]
+Name=Connection established
+Comment=A network connection was established
+default_presentation=16
+
+[disconnected]
+Name=Connection lost
+Comment=A network connection was lost or closed
+default_presentation=16
+
+[failed]
+Name=Connection failed
+Comment=Connecting to a network failed
+default_presentation=16
+
+[vpn-connected]
+Name=VPN connection established
+Comment=A VPN connection was established
+default_presentation=16
+
+[vpn-disconnected]
+Name=VPN connection closed
+Comment=A VPN connection was closed
+default_presentation=16
