@@ -1,0 +1,923 @@
+<?xml version="1.0" ?>
+<!DOCTYPE book PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd" [
+  <!ENTITY tdenmctl "<application>TDE Network Connections</application>">
+  <!ENTITY kappname "&tdenmctl;">
+  <!ENTITY package "tde-nmctl">
+  <!ENTITY nm "<application>NetworkManager</application>">
+  <!ENTITY wallet "<application>TDE Wallet</application>">
+  <!ENTITY polkit "<application>polkit</application>">
+  <!ENTITY % addindex "IGNORE">
+  <!ENTITY % English "INCLUDE">
+]>
+
+<book lang="&language;">
+
+<bookinfo>
+<title>The &tdenmctl; Handbook</title>
+
+<authorgroup>
+<author>
+<othername>tde-nmctl developers</othername>
+</author>
+</authorgroup>
+
+<copyright>
+<year>2026</year>
+<holder>tde-nmctl developers</holder>
+</copyright>
+
+<legalnotice>&FDLNotice;</legalnotice>
+
+<date>2026-11-13</date>
+<releaseinfo>0.1.0</releaseinfo>
+
+<abstract>
+<para>
+&tdenmctl; (<command>tde-nmctl</command>) manages network connections in
+the Trinity Desktop Environment through &nm;. It consists of a system tray
+applet for connecting to wired, Wi-Fi, VPN and mobile networks, and a
+connection editor that is also a Trinity Control Center module and a
+System Settings module. Passwords are kept in &wallet;.
+</para>
+</abstract>
+
+<keywordset>
+<keyword>TDE</keyword>
+<keyword>Trinity</keyword>
+<keyword>NetworkManager</keyword>
+<keyword>network</keyword>
+<keyword>Wi-Fi</keyword>
+<keyword>wireless</keyword>
+<keyword>VPN</keyword>
+<keyword>WireGuard</keyword>
+<keyword>OpenVPN</keyword>
+</keywordset>
+</bookinfo>
+
+<!-- ================================================================== -->
+
+<chapter id="introduction">
+<title>Introduction</title>
+
+<para>
+&nm; is the service that brings up the network connections of most Linux
+systems: it connects to wired networks and Wi-Fi networks, starts VPN
+connections and mobile broadband, gets the addresses by DHCP and sets the
+DNS servers. A desktop program tells &nm; which networks to use and gives
+it the passwords.
+</para>
+
+<para>
+&tdenmctl; is such a program for TDE. It is modelled on the programs that
+other desktops use with &nm;: <application>nm-applet</application> and
+<application>nm-connection-editor</application> (network-manager-gnome),
+<application>nm-tray</application> and <application>plasma-nm</application>.
+It has three parts:
+</para>
+
+<itemizedlist>
+<listitem><para>the <link linkend="tray">tray applet</link>
+(<command>tde-nmctl-tray</command>), which shows the network state in the
+panel, lists the Wi-Fi networks in range and connects with one click. It
+also hands the passwords stored in &wallet; to &nm; and asks for missing
+ones;</para></listitem>
+<listitem><para>the <link linkend="connections">connection editor</link>
+(<command>tde-nmctl</command>), which adds, changes and deletes connection
+profiles of every kind, shows the network devices and has the global
+settings;</para></listitem>
+<listitem><para>the same editor as a <link linkend="kcm">Control Center and
+System Settings module</link>.</para></listitem>
+</itemizedlist>
+
+<para>
+TDE also ships <application>TDENetworkManager</application>, an older
+applet that supports fewer of &nm;'s features. &tdenmctl; talks to &nm;
+directly over D-Bus and supports almost all of them. When both start at
+login, the tray asks once whether TDENetworkManager's autostart should be
+turned off.
+</para>
+
+<note><title>Vibecode disclaimer</title>
+<para>
+&tdenmctl; was written largely by an AI coding assistant, with a person
+giving direction (it was <quote>vibe coded</quote>). It has been tested
+against a real &nm; and a simulated one, but the code has not been read
+line by line by a person. It changes how your computer connects to
+networks and handles your network passwords, so use it at your own risk.
+It comes with no warranty of any kind. Bug reports and reviews are very
+welcome at <ulink url="https://github.com/Yjlion/tde-nmctl/issues">the
+project's issue tracker</ulink>.
+</para>
+</note>
+</chapter>
+
+<!-- ================================================================== -->
+
+<chapter id="tray">
+<title>The Tray Applet</title>
+
+<para>
+<command>tde-nmctl-tray</command> starts at login and shows an icon in the
+system tray of the panel. The icon shows the primary connection, the one
+that carries the default route:
+</para>
+
+<itemizedlist>
+<listitem><para>a network socket for a wired connection, with a warning
+sign if the network has no Internet access;</para></listitem>
+<listitem><para>a fan of four bars for Wi-Fi, filled according to the
+signal strength;</para></listitem>
+<listitem><para>bars for mobile broadband;</para></listitem>
+<listitem><para>a padlock in the corner while a VPN or WireGuard connection
+is up;</para></listitem>
+<listitem><para>dots while connecting, a red cross when not connected and a
+crossed out fan when networking is turned off.</para></listitem>
+</itemizedlist>
+
+<para>
+The tooltip lists the active connections with their devices and the Wi-Fi
+signal strength.
+</para>
+
+<sect1 id="tray-popup">
+<title>The Popup</title>
+
+<screenshot>
+<screeninfo>The tray popup</screeninfo>
+<mediaobject>
+<imageobject><imagedata fileref="tray-popup.png" format="PNG"/></imageobject>
+<textobject><phrase>The tray popup with active connections and Wi-Fi networks</phrase></textobject>
+</mediaobject>
+</screenshot>
+
+<para>
+A left click on the icon opens the popup. From top to bottom it shows:
+</para>
+
+<variablelist>
+<varlistentry>
+<term>State</term>
+<listitem><para>The primary connection and whether the Internet can be
+reached (&nm;'s connectivity check): <quote>Full Internet access</quote>,
+<quote>Limited</quote> or <quote>Behind a captive portal</quote>, which
+means you have to sign in on a web page first.</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><guilabel>Networking</guilabel>, <guilabel>Wi-Fi</guilabel>, <guilabel>Mobile</guilabel></term>
+<listitem><para>Turn all networking, the Wi-Fi radio and mobile broadband
+on and off. Wi-Fi is only shown if there is a Wi-Fi device, Mobile only if
+there is a modem. A switch is disabled if the device is turned off by a
+hardware switch.</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><guilabel>Active Connections</guilabel></term>
+<listitem><para>Each connection that is up or coming up, with its device,
+address, speed or signal strength. The <guiicon>i</guiicon> button opens the
+<link linkend="tray-info">connection information</link>,
+<guibutton>Disconnect</guibutton> closes the connection.</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><guilabel>Wi-Fi Networks</guilabel></term>
+<listitem><para>The networks in range, one line per network name, with
+saved networks first and then by signal strength. Each line shows the
+security (a padlock and WPA2, WPA3, WEP, Enterprise or Open), whether a
+connection is <quote>Saved</quote> and the band. The refresh button asks
+the Wi-Fi device to search again; while the popup is open this also
+happens every 20 seconds. <guibutton>Connect</guibutton> connects, see
+<xref linkend="tray-connect"/>.</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><guilabel>Connect to Hidden Network</guilabel></term>
+<listitem><para>Opens a dialog for a network that does not broadcast its
+name: enter the name (SSID), the security, the password and the
+device.</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><guilabel>VPN and Other Connections</guilabel></term>
+<listitem><para>The VPN and WireGuard connections and the other saved
+connections that can be started now, for example a second wired profile
+or a bridge.</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><guibutton>Edit Connections...</guibutton></term>
+<listitem><para>Starts the <link linkend="connections">connection
+editor</link>.</para></listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+<sect1 id="tray-connect">
+<title>Connecting to a Wi-Fi Network</title>
+
+<para>
+When you press <guibutton>Connect</guibutton> next to a Wi-Fi network:
+</para>
+
+<itemizedlist>
+<listitem><para>If a connection for this network is saved, the most
+recently used one is started.</para></listitem>
+<listitem><para>An open network is connected at once.</para></listitem>
+<listitem><para>For a network with a password (WPA, WPA2, WPA3 or WEP) the
+password dialog opens. With <guilabel>Remember in TDE Wallet</guilabel> the
+password is kept in &wallet; and the network is connected automatically
+from then on.</para></listitem>
+<listitem><para>An enterprise network (WPA2 Enterprise, 802.1X) needs more
+than a password, so the connection editor opens on its
+<guilabel>Wi-Fi Security</guilabel> tab; see <xref linkend="edit-8021x"/>.
+The network is connected when you press <guibutton>OK</guibutton>.</para></listitem>
+</itemizedlist>
+
+<screenshot>
+<screeninfo>The password dialog</screeninfo>
+<mediaobject>
+<imageobject><imagedata fileref="password-dialog.png" format="PNG"/></imageobject>
+<textobject><phrase>The dialog that asks for a Wi-Fi password</phrase></textobject>
+</mediaobject>
+</screenshot>
+
+<para>
+A connection created this way is for your user only, unless you are
+allowed to change connections for all users without a password. You can
+change this later in the editor's <guilabel>General</guilabel> tab.
+</para>
+
+<para>
+The same dialog opens whenever &nm; needs a password that is not stored:
+a VPN password that is to be asked for every time, a changed Wi-Fi
+password, or a SIM PIN.
+</para>
+</sect1>
+
+<sect1 id="tray-info">
+<title>Connection Information</title>
+
+<para>
+<guimenuitem>Connection Information...</guimenuitem> in the context menu,
+or the <guiicon>i</guiicon> button of an active connection, shows one tab
+per active connection with the device, driver, hardware address, speed or
+bit rate, the Wi-Fi network, signal, security, frequency and access point,
+the IPv4 and IPv6 addresses, gateway and DNS servers, and the traffic
+received and sent with the current rate.
+</para>
+
+<screenshot>
+<screeninfo>Connection information</screeninfo>
+<mediaobject>
+<imageobject><imagedata fileref="info-dialog.png" format="PNG"/></imageobject>
+<textobject><phrase>The connection information dialog</phrase></textobject>
+</mediaobject>
+</screenshot>
+</sect1>
+
+<sect1 id="tray-menu">
+<title>The Context Menu</title>
+
+<screenshot>
+<screeninfo>The tray menu</screeninfo>
+<mediaobject>
+<imageobject><imagedata fileref="tray-menu.png" format="PNG"/></imageobject>
+<textobject><phrase>The context menu of the tray icon</phrase></textobject>
+</mediaobject>
+</screenshot>
+
+<variablelist>
+<varlistentry>
+<term><guimenuitem>Enable Networking</guimenuitem>, <guimenuitem>Enable Wi-Fi</guimenuitem>, <guimenuitem>Enable Mobile Broadband</guimenuitem></term>
+<listitem><para>The same switches as in the popup.</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><guimenuitem>Connection Information...</guimenuitem></term>
+<listitem><para>See <xref linkend="tray-info"/>.</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><guimenuitem>Connect to Hidden Wi-Fi Network...</guimenuitem></term>
+<listitem><para>For networks that do not broadcast their name.</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><guimenuitem>Edit Connections...</guimenuitem></term>
+<listitem><para>Starts the connection editor.</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><guimenuitem>Show Notifications</guimenuitem></term>
+<listitem><para>Notifications when a connection is established, lost or
+fails, and when a VPN connects or disconnects. How they are shown (popup,
+sound, ...) is set in the Control Center under
+<guimenuitem>System Notifications</guimenuitem>, application
+<quote>Network</quote>.</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><guimenuitem>Start Automatically at Login</guimenuitem></term>
+<listitem><para>Untick to stop the tray from starting at login. Note that
+the tray stores your passwords' access: without it, &nm; cannot get
+passwords from &wallet; (connections whose passwords are stored for all
+users still work).</para></listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+</chapter>
+
+<!-- ================================================================== -->
+
+<chapter id="connections">
+<title>The Connection Editor</title>
+
+<para>
+Start the editor with <guibutton>Edit Connections...</guibutton> in the
+tray, from the K menu (<guimenuitem>Settings</guimenuitem> &gt;
+<guimenuitem>Network Connections</guimenuitem>) or with
+<command>tde-nmctl</command>. It has three tabs:
+<guilabel>Connections</guilabel>, <guilabel>Devices</guilabel> and
+<guilabel>Settings</guilabel>.
+</para>
+
+<sect1 id="connections-list">
+<title>The List of Connections</title>
+
+<screenshot>
+<screeninfo>The connection list</screeninfo>
+<mediaobject>
+<imageobject><imagedata fileref="connections.png" format="PNG"/></imageobject>
+<textobject><phrase>The list of connections</phrase></textobject>
+</mediaobject>
+</screenshot>
+
+<para>
+A <emphasis>connection</emphasis> (or connection profile) is a set of
+settings for one network: the Wi-Fi network at home, the office network
+with its 802.1X login, a VPN. &nm; picks a suitable connection when a
+device becomes available, or starts the one you choose.
+</para>
+
+<para>
+The list groups the connections as Wired, Wi-Fi, VPN, Mobile and DSL, and
+Virtual (bonds, bridges, VLANs...). The <guilabel>State</guilabel> column
+shows the active ones with their device, <guilabel>Last Used</guilabel>
+when they were last connected. The buttons:
+</para>
+
+<variablelist>
+<varlistentry>
+<term><guibutton>Add</guibutton></term>
+<listitem><para>A menu of the connection types; choose one to open the
+editor for a new connection. <guimenuitem>Wi-Fi Hotspot</guimenuitem>
+creates a Wi-Fi access point that shares this computer's Internet
+connection.</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><guibutton>Edit...</guibutton></term>
+<listitem><para>Opens the selected connection in the editor (also a
+double click).</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><guibutton>Delete</guibutton></term>
+<listitem><para>Deletes the connection, and its passwords from
+&wallet;.</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><guibutton>Duplicate</guibutton></term>
+<listitem><para>Makes a copy with a new name and UUID, including the
+passwords.</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><guibutton>Connect</guibutton> / <guibutton>Disconnect</guibutton></term>
+<listitem><para>Starts or stops the selected connection.</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><guibutton>Import VPN...</guibutton>, <guibutton>Export...</guibutton></term>
+<listitem><para>Imports an OpenVPN (<filename>.ovpn</filename>), WireGuard
+or vpnc configuration file as a new connection, or exports a VPN
+connection to a file. This uses the VPN plugins through
+<command>nmcli</command>.</para></listitem>
+</varlistentry>
+</variablelist>
+
+<para>
+The line above the list says when changes need the administrator's
+password, see <xref linkend="security-polkit"/>.
+</para>
+</sect1>
+
+<sect1 id="editing">
+<title>Editing a Connection</title>
+
+<para>
+The editor has a tab for each group of settings; which tabs there are
+depends on the type of connection. Press <guibutton>OK</guibutton> to save:
+the editor checks the input first and shows the tab with the problem if
+something is missing or wrong. Settings the editor does not show are kept
+as they are.
+</para>
+
+<sect2 id="edit-general">
+<title>General</title>
+
+<screenshot>
+<screeninfo>The General tab</screeninfo>
+<mediaobject>
+<imageobject><imagedata fileref="editor-general.png" format="PNG"/></imageobject>
+<textobject><phrase>The General tab of the editor</phrase></textobject>
+</mediaobject>
+</screenshot>
+
+<variablelist>
+<varlistentry><term><guilabel>Connection name</guilabel></term>
+<listitem><para>The name shown in the lists.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>Connect automatically with priority</guilabel></term>
+<listitem><para>&nm; starts the connection by itself when its device and
+network are available. When several could be used, the one with the
+highest priority wins.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>Connection attempts</guilabel></term>
+<listitem><para>How often &nm; tries to connect automatically before giving
+up.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>All users may connect to this network</guilabel></term>
+<listitem><para>Without it, only your user can see and use the connection.
+Changing a connection for all users usually needs the administrator's
+password.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>Automatically connect to VPN</guilabel></term>
+<listitem><para>Starts the chosen VPN whenever this connection comes
+up.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>Firewall zone</guilabel></term>
+<listitem><para>The firewalld zone of the interface while this connection
+is used, for example <quote>home</quote> or <quote>public</quote>.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>Metered connection</guilabel></term>
+<listitem><para>Tells applications that data costs money on this
+connection.</para></listitem></varlistentry>
+</variablelist>
+</sect2>
+
+<sect2 id="edit-ethernet">
+<title>Ethernet</title>
+<para>
+<guilabel>Device</guilabel> ties the connection to one network interface
+(or <quote>(any)</quote>); <guilabel>Restrict to MAC address</guilabel> to
+one network card. <guilabel>Cloned MAC address</guilabel> sets the address
+the card uses on the network: an address, or <guilabel>Preserve</guilabel>,
+<guilabel>Permanent</guilabel>, <guilabel>Random</guilabel> (new for each
+connection) or <guilabel>Stable</guilabel> (random, but the same for this
+connection). <guilabel>MTU</guilabel>, <guilabel>Link negotiation</guilabel>
+with speed and duplex, and <guilabel>Wake on LAN</guilabel> are for
+special cases.
+</para>
+</sect2>
+
+<sect2 id="edit-wifi">
+<title>Wi-Fi</title>
+<para>
+<guilabel>SSID</guilabel> is the name of the network. <guilabel>Mode</guilabel>
+is <guilabel>Client</guilabel> for a normal network, or
+<guilabel>Hotspot</guilabel> to make this computer an access point that
+shares its connection (the IPv4 method becomes <quote>Shared to other
+computers</quote>), <guilabel>Ad-hoc</guilabel> or <guilabel>Mesh</guilabel>.
+<guilabel>Band</guilabel> and <guilabel>Channel</guilabel> restrict the
+frequencies; <guilabel>BSSID</guilabel> ties the connection to one access
+point. <guilabel>MAC address randomization</guilabel>, <guilabel>Power
+saving</guilabel> and <guilabel>This is a hidden network</guilabel> are
+also here.
+</para>
+</sect2>
+
+<sect2 id="edit-wifi-security">
+<title>Wi-Fi Security</title>
+
+<para>
+<guilabel>Security</guilabel> has the methods of nm-connection-editor:
+<guilabel>None</guilabel>, <guilabel>WEP</guilabel> with a key or a
+passphrase, <guilabel>LEAP</guilabel>, <guilabel>Dynamic WEP
+(802.1X)</guilabel>, <guilabel>WPA &amp; WPA2 Personal</guilabel>,
+<guilabel>WPA3 Personal</guilabel> (SAE), <guilabel>WPA &amp; WPA2
+Enterprise</guilabel>, <guilabel>WPA3 Enterprise</guilabel> and
+<guilabel>Enhanced Open (OWE)</guilabel>. For personal networks enter the
+password; see <xref linkend="security-passwords"/> for where it is
+stored. <guilabel>Protected management frames</guilabel> can be required
+or turned off for networks that need it.
+</para>
+</sect2>
+
+<sect2 id="edit-8021x">
+<title>802.1X Security (Enterprise Networks)</title>
+
+<screenshot>
+<screeninfo>802.1X settings</screeninfo>
+<mediaobject>
+<imageobject><imagedata fileref="editor-wifi-security.png" format="PNG"/></imageobject>
+<textobject><phrase>WPA2 Enterprise settings with PEAP</phrase></textobject>
+</mediaobject>
+</screenshot>
+
+<para>
+Enterprise Wi-Fi networks and some wired networks (the
+<guilabel>802.1X Security</guilabel> tab of a wired connection) check a
+user name and password or a certificate. Your network administrator tells
+you which <guilabel>Authentication</guilabel> to use:
+</para>
+<itemizedlist>
+<listitem><para><guilabel>Protected EAP (PEAP)</guilabel> and
+<guilabel>Tunneled TLS (TTLS)</guilabel>: a user name
+(<guilabel>Identity</guilabel>) and password inside an encrypted tunnel.
+<guilabel>Inner authentication</guilabel> is usually MSCHAPv2 for PEAP and
+PAP or MSCHAPv2 for TTLS.</para></listitem>
+<listitem><para><guilabel>TLS</guilabel>: a user certificate and its
+private key.</para></listitem>
+<listitem><para><guilabel>PWD</guilabel>, <guilabel>LEAP</guilabel>,
+<guilabel>FAST</guilabel> and <guilabel>MD5</guilabel> are
+rarer.</para></listitem>
+</itemizedlist>
+<para>
+Set the <guilabel>CA certificate</guilabel> of the network and the
+<guilabel>Domain</guilabel> of its server: without them, anyone can set
+up a network of the same name and collect your password. Only tick
+<guilabel>No CA certificate is required</guilabel> if there is no other
+way.
+</para>
+</sect2>
+
+<sect2 id="edit-ip">
+<title>IPv4 and IPv6 Settings</title>
+
+<screenshot>
+<screeninfo>IPv4 settings</screeninfo>
+<mediaobject>
+<imageobject><imagedata fileref="editor-ipv4.png" format="PNG"/></imageobject>
+<textobject><phrase>IPv4 settings with a manual address</phrase></textobject>
+</mediaobject>
+</screenshot>
+
+<variablelist>
+<varlistentry><term><guilabel>Method</guilabel></term>
+<listitem><para><guilabel>Automatic</guilabel> gets the address by DHCP
+(and for IPv6 also by router advertisements); <guilabel>Manual</guilabel>
+uses the addresses in the table; <guilabel>Link-local only</guilabel> uses
+an automatic address without a server; <guilabel>Shared to other
+computers</guilabel> gives addresses to other computers and shares this
+computer's connection with them; <guilabel>Disabled</guilabel> (and for
+IPv6 <guilabel>Ignore</guilabel>) does not configure this protocol.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>Addresses</guilabel></term>
+<listitem><para>For the manual method: address, netmask or prefix length
+(<userinput>255.255.255.0</userinput> or <userinput>24</userinput>) and
+gateway. Only one gateway is used.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>DNS servers</guilabel>, <guilabel>Search domains</guilabel></term>
+<listitem><para>Separated by commas or spaces. With
+<guilabel>Use automatically obtained DNS servers</guilabel> unticked only
+these are used.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>DHCP client ID</guilabel>, <guilabel>DHCP host name</guilabel></term>
+<listitem><para>What is sent to the DHCP server.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>Use this connection only for resources on its network</guilabel></term>
+<listitem><para>Do not route everything through this connection, only its
+own network and its routes (useful for a VPN).</para></listitem></varlistentry>
+<varlistentry><term><guilabel>Require IPv4 addressing for this connection to complete</guilabel></term>
+<listitem><para>Without it, the connection counts as up if only IPv6
+works (or the other way round).</para></listitem></varlistentry>
+<varlistentry><term><guibutton>Routes...</guibutton></term>
+<listitem><para>Static routes: destination, prefix, gateway and
+metric.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>IPv6 privacy extensions</guilabel>, <guilabel>Address generation</guilabel></term>
+<listitem><para>Temporary IPv6 addresses for outgoing connections, and how
+the permanent address is formed.</para></listitem></varlistentry>
+</variablelist>
+</sect2>
+
+<sect2 id="edit-vpn">
+<title>VPN</title>
+
+<screenshot>
+<screeninfo>VPN settings</screeninfo>
+<mediaobject>
+<imageobject><imagedata fileref="editor-vpn.png" format="PNG"/></imageobject>
+<textobject><phrase>OpenVPN settings</phrase></textobject>
+</mediaobject>
+</screenshot>
+
+<para>
+&nm; connects to VPNs through plugins, which are separate packages:
+<filename>network-manager-openvpn</filename>,
+<filename>network-manager-vpnc</filename> (Cisco compatible),
+<filename>network-manager-openconnect</filename> (Cisco AnyConnect,
+GlobalProtect, Pulse), <filename>network-manager-l2tp</filename>,
+<filename>network-manager-pptp</filename>,
+<filename>network-manager-strongswan</filename>,
+<filename>network-manager-libreswan</filename>,
+<filename>network-manager-fortisslvpn</filename>,
+<filename>network-manager-sstp</filename> and
+<filename>network-manager-ssh</filename>. The <guilabel>VPN type</guilabel>
+list marks the ones that are not installed.
+</para>
+<para>
+For every type the <guilabel>Gateway</guilabel>, user name and password
+are shown as fields; OpenVPN also has its authentication type,
+certificates, keys, port, TCP and device type. <guilabel>Other
+Options</guilabel> lists every other option of the plugin by name, so all
+of its features can be used; the plugin's documentation lists them. The
+easiest way to set up a VPN is usually <guibutton>Import VPN...</guibutton>
+with the configuration file from the VPN provider.
+</para>
+</sect2>
+
+<sect2 id="edit-wireguard">
+<title>WireGuard</title>
+
+<screenshot>
+<screeninfo>WireGuard settings</screeninfo>
+<mediaobject>
+<imageobject><imagedata fileref="editor-wireguard.png" format="PNG"/></imageobject>
+<textobject><phrase>WireGuard settings with a peer</phrase></textobject>
+</mediaobject>
+</screenshot>
+
+<para>
+&nm; supports WireGuard itself. Enter the <guilabel>Interface
+name</guilabel> (for example <userinput>wg0</userinput>) and the
+<guilabel>Private key</guilabel>; <guibutton>Generate</guibutton> creates a
+new key (with <command>wg</command> from wireguard-tools) and shows the
+public key to give to the other side. Each <guilabel>Peer</guilabel> has a
+public key, the allowed IPs that are routed to it, an endpoint
+(host:port), a keepalive interval and an optional preshared key. The
+addresses of the tunnel go in the IPv4 and IPv6 tabs (method Manual).
+A WireGuard <filename>.conf</filename> file can also be imported.
+</para>
+</sect2>
+
+<sect2 id="edit-other">
+<title>Mobile Broadband, DSL and Virtual Devices</title>
+<variablelist>
+<varlistentry><term><guilabel>Mobile Broadband</guilabel></term>
+<listitem><para>For GSM, UMTS, LTE and 5G modems: the
+<guilabel>APN</guilabel> of your provider, user name and password if
+needed, the SIM PIN, the network ID and whether roaming is allowed. CDMA
+modems need the number, usually <userinput>#777</userinput>. Modems are
+handled by ModemManager.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>DSL/PPPoE</guilabel></term>
+<listitem><para>The Ethernet device the DSL modem is connected to, the
+user name and password of the provider, an optional service name and PPP
+options.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>Bond</guilabel>, <guilabel>Team</guilabel></term>
+<listitem><para>Combine several network cards into one, for more speed
+or redundancy: the interface name, the mode (round-robin, active backup,
+802.3ad and others) and link monitoring. The <guilabel>Ports</guilabel>
+list holds a connection for each network card; <guibutton>Add...</guibutton>
+creates one.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>Bridge</guilabel></term>
+<listitem><para>A virtual switch, for example for virtual machines, with
+STP and VLAN filtering settings and its ports.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>VLAN</guilabel></term>
+<listitem><para>The parent interface and VLAN ID; the interface name is
+suggested as <replaceable>parent</replaceable>.<replaceable>id</replaceable>.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>InfiniBand</guilabel>, <guilabel>Dummy</guilabel></term>
+<listitem><para>The transport mode and P_Key of InfiniBand, the interface
+name of a dummy device.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>Proxy</guilabel></term>
+<listitem><para>A proxy auto-configuration URL that &nm; hands to
+applications which ask for it. TDE's own proxy settings are in the Control
+Center under Internet &amp; Network &gt; Proxy.</para></listitem></varlistentry>
+</variablelist>
+</sect2>
+</sect1>
+
+<sect1 id="devices">
+<title>Devices</title>
+
+<screenshot>
+<screeninfo>The Devices tab</screeninfo>
+<mediaobject>
+<imageobject><imagedata fileref="devices.png" format="PNG"/></imageobject>
+<textobject><phrase>A Wi-Fi device with its addresses and the networks in range</phrase></textobject>
+</mediaobject>
+</screenshot>
+
+<para>
+The <guilabel>Devices</guilabel> tab lists the network devices with their
+type, state and connection. Below are the details of the selected device:
+the reason when it failed or is unavailable, hardware, driver and
+firmware, hardware address, speed, MTU, the IPv4 and IPv6 addresses,
+gateway and DNS servers, the traffic, and for Wi-Fi devices the network,
+signal, frequency and all networks in range with their channel and
+access point address.
+</para>
+<para>
+<guibutton>Disconnect</guibutton> disconnects the device until you
+connect it again; <guibutton>Search for Networks</guibutton> scans for
+Wi-Fi networks. <guilabel>Managed by NetworkManager</guilabel> hands a
+device to &nm; or takes it away, <guilabel>Connect automatically</guilabel>
+allows automatic connections on it.
+</para>
+</sect1>
+
+<sect1 id="settings">
+<title>Settings</title>
+
+<screenshot>
+<screeninfo>The Settings tab</screeninfo>
+<mediaobject>
+<imageobject><imagedata fileref="settings.png" format="PNG"/></imageobject>
+<textobject><phrase>Global network settings</phrase></textobject>
+</mediaobject>
+</screenshot>
+
+<variablelist>
+<varlistentry><term><guilabel>Enable networking</guilabel>, <guilabel>Enable Wi-Fi</guilabel>, <guilabel>Enable mobile broadband</guilabel></term>
+<listitem><para>Take effect at once.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>Check Internet access</guilabel></term>
+<listitem><para>&nm;'s connectivity check, which finds out whether the
+Internet can be reached and whether a captive portal wants you to sign
+in. <guibutton>Check Now</guibutton> checks at once.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>Host name</guilabel></term>
+<listitem><para>The name of this computer.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>Store new passwords in TDE Wallet</guilabel></term>
+<listitem><para>The default storage of new passwords, see
+<xref linkend="security-passwords"/>.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>Show notifications</guilabel>, <guilabel>Show all Wi-Fi networks in range</guilabel>, <guilabel>Start the tray icon at login</guilabel></term>
+<listitem><para>Options of the tray applet.</para></listitem></varlistentry>
+</variablelist>
+<para>
+Press <guibutton>Apply</guibutton> to save the host name and the
+options.
+</para>
+</sect1>
+
+<sect1 id="kcm">
+<title>Control Center and System Settings</title>
+
+<screenshot>
+<screeninfo>The module in the Control Center</screeninfo>
+<mediaobject>
+<imageobject><imagedata fileref="kcontrol.png" format="PNG"/></imageobject>
+<textobject><phrase>Network Connections in the Trinity Control Center</phrase></textobject>
+</mediaobject>
+</screenshot>
+
+<para>
+The editor is also a module of the Trinity Control Center, under
+<guimenuitem>Internet &amp; Network</guimenuitem> &gt; <guimenuitem>Network
+Connections</guimenuitem>, of System Settings, under <guimenuitem>Network
+&amp; Connectivity</guimenuitem> &gt; <guimenuitem>Network
+Settings</guimenuitem>, and can be started alone with
+<command>tdecmshell nmctl</command>. It has the same three tabs;
+<guibutton>Apply</guibutton> saves the <guilabel>Settings</guilabel> tab,
+connections are saved by their own dialogs.
+</para>
+</sect1>
+</chapter>
+
+<!-- ================================================================== -->
+
+<chapter id="security">
+<title>Passwords and Permissions</title>
+
+<sect1 id="security-passwords">
+<title>Where Passwords Are Stored</title>
+
+<para>
+Every password field has a list next to it with the storage, as in
+nm-connection-editor and plasma-nm:
+</para>
+<variablelist>
+<varlistentry><term><guilabel>Store in TDE Wallet (this user)</guilabel></term>
+<listitem><para>The password belongs to you. &nm; does not store it; it is
+kept encrypted in &wallet; (the network wallet, folder
+<filename>tde-nmctl</filename>) and the tray applet gives it to &nm; when
+connecting. Only you can connect with it, and only while you are logged
+in. This is the default.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>Store for all users (unencrypted)</guilabel></term>
+<listitem><para>&nm; stores the password in its connection file under
+<filename>/etc/NetworkManager/system-connections</filename>, readable only
+by root. The connection also works before anyone logs in and for every
+user. Changing such a connection usually needs the administrator's
+password.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>Ask every time</guilabel></term>
+<listitem><para>The password is never stored; the tray asks for it each
+time.</para></listitem></varlistentry>
+<varlistentry><term><guilabel>Not required</guilabel></term>
+<listitem><para>(VPN only) the plugin does not need this secret.</para></listitem></varlistentry>
+</variablelist>
+<para>
+The first time a password is stored in or read from &wallet;, the wallet
+asks for its own password (or, the first time ever, sets up the wallet).
+The stored passwords can be seen and deleted with
+<application>TDE Wallet Manager</application>.
+</para>
+</sect1>
+
+<sect1 id="security-polkit">
+<title>Administrator Rights (polkit)</title>
+<para>
+&nm; checks with &polkit; whether you may do what you ask. Usually a
+logged in user may connect and disconnect, turn Wi-Fi on and off and
+change connections that belong to them, while changing connections for
+all users, the host name, or turning off networking needs the
+administrator's password. A polkit authentication agent asks for it; in
+TDE that is <application>polkit-agent-tde</application>, which has to be
+running.
+</para>
+<para>
+&tdenmctl; asks &polkit; beforehand (with polkit-tqt) and shows a note in
+the editor when a change will need the password, or when you are not
+allowed to make it. It also warns when no authentication agent is
+running, because then the change would simply fail.
+</para>
+</sect1>
+</chapter>
+
+<!-- ================================================================== -->
+
+<chapter id="troubleshooting">
+<title>Troubleshooting</title>
+
+<qandaset>
+<qandaentry>
+<question><para>The editor says NetworkManager is not running.</para></question>
+<answer><para>Start the service, for example with <command>systemctl
+enable --now NetworkManager</command>. If another network program such as
+ifupdown or systemd-networkd manages the device, &nm; leaves it alone: see
+the <guilabel>Devices</guilabel> tab and
+<filename>/etc/NetworkManager/NetworkManager.conf</filename>.</para></answer>
+</qandaentry>
+<qandaentry>
+<question><para>Saving fails with <quote>Not authorized</quote>.</para></question>
+<answer><para>A polkit authentication agent is needed to type the
+administrator's password. Make sure <command>polkit-agent-tde</command>
+runs (it is started at login by the polkit-agent-tde package), or untick
+<guilabel>All users may connect to this network</guilabel> to make the
+connection yours.</para></answer>
+</qandaentry>
+<qandaentry>
+<question><para>A Wi-Fi network asks for the password every time.</para></question>
+<answer><para>The tray applet must be running, because it gives &nm; the
+passwords from &wallet;. Also check that the password storage is not
+<guilabel>Ask every time</guilabel>, and that &wallet; is enabled (Control
+Center, Security &amp; Privacy, TDE Wallet).</para></answer>
+</qandaentry>
+<qandaentry>
+<question><para>A VPN type is marked <quote>not installed</quote>.</para></question>
+<answer><para>Install the plugin package named in the list, for example
+<filename>network-manager-openvpn</filename>, and restart &nm;.</para></answer>
+</qandaentry>
+<qandaentry>
+<question><para>Two network icons are in the panel.</para></question>
+<answer><para>TDENetworkManager is also running. Choose to turn it off
+when asked, or untick its autostart.</para></answer>
+</qandaentry>
+<qandaentry>
+<question><para>How can I see what &nm; is doing?</para></question>
+<answer><para><command>tde-nmctl --list</command> prints the devices,
+networks and connections; <command>journalctl -u NetworkManager</command>
+shows &nm;'s log.</para></answer>
+</qandaentry>
+</qandaset>
+</chapter>
+
+<!-- ================================================================== -->
+
+<chapter id="commands">
+<title>Command Line</title>
+
+<variablelist>
+<varlistentry><term><command>tde-nmctl</command> <option>--page</option> <replaceable>connections|devices|settings</replaceable></term>
+<listitem><para>Opens the editor on a page.</para></listitem></varlistentry>
+<varlistentry><term><command>tde-nmctl</command> <option>--edit</option> <replaceable>name or UUID</replaceable> [<option>--tab</option> <replaceable>n</replaceable>]</term>
+<listitem><para>Edits one connection.</para></listitem></varlistentry>
+<varlistentry><term><command>tde-nmctl</command> <option>--new</option> <replaceable>type</replaceable></term>
+<listitem><para>Creates a connection: <userinput>ethernet</userinput>,
+<userinput>wifi</userinput>, <userinput>vpn</userinput>,
+<userinput>wireguard</userinput>, <userinput>bond</userinput>,
+<userinput>bridge</userinput>, <userinput>team</userinput>,
+<userinput>vlan</userinput>, <userinput>gsm</userinput>,
+<userinput>cdma</userinput>, <userinput>pppoe</userinput>,
+<userinput>infiniband</userinput>, <userinput>dummy</userinput>.</para></listitem></varlistentry>
+<varlistentry><term><command>tde-nmctl</command> <option>--list</option>, <option>--show</option> <replaceable>connection</replaceable></term>
+<listitem><para>Print the state or one connection's settings, without an
+X display.</para></listitem></varlistentry>
+<varlistentry><term><command>tde-nmctl-tray</command> [<option>--popup</option>]</term>
+<listitem><para>Starts the tray applet (and opens the popup).</para></listitem></varlistentry>
+<varlistentry><term><command>tdecmshell nmctl</command></term>
+<listitem><para>The Control Center module alone.</para></listitem></varlistentry>
+</variablelist>
+<para>See also the manual pages <citerefentry><refentrytitle>tde-nmctl</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+and <citerefentry><refentrytitle>tde-nmctl-tray</refentrytitle><manvolnum>1</manvolnum></citerefentry>.</para>
+</chapter>
+
+<!-- ================================================================== -->
+
+<chapter id="credits">
+<title>Credits and License</title>
+
+<para>
+&tdenmctl; &copy; 2026 tde-nmctl developers. It was written with the help
+of an AI coding assistant (see the disclaimer in the
+<link linkend="introduction">introduction</link>). Its design follows
+network-manager-gnome, nm-tray and plasma-nm; it uses &nm;'s D-Bus
+interface through dbus-1-tqt, &wallet; and polkit-tqt.
+</para>
+
+<para>
+Project page: <ulink url="https://github.com/Yjlion/tde-nmctl">https://github.com/Yjlion/tde-nmctl</ulink>
+</para>
+
+&underFDL;
+&underGPL;
+</chapter>
+
+</book>
+<!--
+Local Variables:
+mode: xml
+End:
+-->

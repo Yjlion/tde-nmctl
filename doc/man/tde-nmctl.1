@@ -1,0 +1,180 @@
+.\" Manual page for tde-nmctl
+.\" Copyright (C) 2026 tde-nmctl developers
+.\" This page is distributed under the terms of the GNU GPL version 2 or later.
+.TH TDE\-NMCTL 1 "November 2026" "tde-nmctl 0.1.0" "Trinity Desktop Environment"
+.SH NAME
+tde\-nmctl \- network connection editor for NetworkManager
+.SH SYNOPSIS
+.B tde\-nmctl
+.RB [ \-\-page
+.IR page ]
+.RB [ \-\-select
+.IR name ]
+.RI [ "generic TDE and TQt options" ]
+.br
+.B tde\-nmctl
+.BI \-\-edit " connection"
+.RB [ \-\-tab
+.IR number ]
+.br
+.B tde\-nmctl
+.BI \-\-new " type"
+.RB [ \-\-tab
+.IR number ]
+.br
+.B tde\-nmctl
+.B \-\-list
+|
+.BI \-\-show " connection"
+.br
+.B tdecmshell nmctl
+.SH DESCRIPTION
+.B tde\-nmctl
+manages the network connections of
+.BR NetworkManager (8)
+in the Trinity Desktop Environment. Its window is modelled on
+.BR nm\-connection\-editor (1)
+and
+.BR plasma\-nm .
+.PP
+The
+.B Connections
+page lists the connection profiles grouped as wired, Wi\-Fi, VPN, mobile
+and virtual, with their state and when they were last used. Profiles can be
+added, edited, deleted, duplicated, connected and disconnected; VPN
+configurations can be imported from and exported to
+.I .ovpn
+and WireGuard
+.I .conf
+files (through
+.BR nmcli (1)).
+.PP
+The editor has a tab for each group of settings: General (name, automatic
+connection and its priority, users, VPN started with the connection,
+firewall zone, metered), Ethernet, Wi\-Fi, Wi\-Fi Security (WEP, WPA/WPA2/WPA3
+Personal and Enterprise, OWE, LEAP), 802.1X (TLS, PEAP, TTLS, PWD, LEAP,
+FAST), VPN (the NetworkManager VPN plugins: OpenVPN, vpnc, OpenConnect,
+L2TP, PPTP, strongSwan, Libreswan, Fortinet, SSTP, SSH), WireGuard, Mobile
+Broadband (GSM/LTE, CDMA), DSL/PPPoE, InfiniBand, Bond, Bridge, Team, VLAN,
+IPv4 and IPv6 (method, addresses, DNS, search domains, routes) and Proxy.
+.PP
+The
+.B Devices
+page shows every network device with its driver, hardware address, speed,
+addresses, DNS servers and traffic, and the Wi\-Fi networks in range.
+The
+.B Settings
+page turns networking, Wi\-Fi and mobile broadband on and off, sets the
+connectivity check and the host name, and chooses where new passwords are
+stored.
+.PP
+The same pages are available as a Trinity Control Center module, under
+.B Internet & Network \(-> Network Connections
+or with
+.BR "tdecmshell nmctl" ,
+and in System Settings under
+.BR "Network & Connectivity \(-> Network Settings" .
+The system tray icon, which also hands passwords to NetworkManager, is
+.BR tde\-nmctl\-tray (1).
+.SH OPTIONS
+.TP
+.BI \-\-page " page"
+The page shown at start:
+.BR connections " (default), " devices " or " settings .
+.TP
+.BI \-\-select " name"
+Select the connection with this name or UUID in the list, or with
+.B \-\-page devices
+the device with this interface name.
+.TP
+.BI \-\-edit " connection"
+Open the editor for the connection with this name or UUID and exit when it
+is closed. The exit status is 0 if the connection was saved.
+.TP
+.BI \-\-new " type"
+Open the editor for a new connection and exit when it is closed.
+.I type
+is one of
+.BR ethernet ", " wifi ", " vpn ", " wireguard ", " bond ", " bridge ", " team ", "
+.BR vlan ", " gsm ", " cdma ", " pppoe ", " infiniband " or " dummy ,
+or a NetworkManager setting name such as
+.BR 802\-11\-wireless .
+.TP
+.BI \-\-tab " number"
+With
+.B \-\-edit
+or
+.BR \-\-new :
+the tab of the editor shown first, counted from 0.
+.TP
+.B \-\-list
+Print NetworkManager's state, the devices with the Wi\-Fi networks in range
+and the connection profiles, then exit. Needs no X display.
+.TP
+.BI \-\-show " connection"
+Print the settings of a connection (without its secrets) and exit.
+.SH PASSWORDS
+Every password field has a choice of storage, as in nm\-connection\-editor:
+.TP
+.B Store in TDE Wallet (this user)
+The password belongs to the user (NetworkManager's
+.I agent\-owned
+flag). It is kept in TDE Wallet, in the folder
+.B tde\-nmctl
+of the network wallet, and handed to NetworkManager by the secret agent in
+.BR tde\-nmctl\-tray (1).
+This is the default for new passwords.
+.TP
+.B Store for all users (unencrypted)
+NetworkManager stores the password itself, readable by root, in
+.IR /etc/NetworkManager/system\-connections .
+.TP
+.B Ask every time
+The password is never stored; the tray asks for it when connecting.
+.SH AUTHORIZATION
+NetworkManager checks every change with
+.BR polkit (8).
+Changing connections that all users may use, the host name, or turning
+networking off usually needs the administrator's password, which a polkit
+authentication agent such as
+.B polkit\-agent\-tde
+asks for. tde\-nmctl uses polkit\-tqt to show beforehand what will need
+authentication and warns if no agent is running. Connections for the
+current user only can usually be changed without a password.
+.SH FILES
+.TP
+.I ~/.trinity/share/config/tde\-nmctlrc
+Settings: password storage, notifications, the list of networks in the
+tray.
+.TP
+.I ~/.trinity/share/config/tde\-nmctl\-trayrc
+Whether the tray icon starts at login.
+.SH EXAMPLES
+.TP
+.B tde\-nmctl \-\-new wifi
+Create a Wi\-Fi connection.
+.TP
+.B tde\-nmctl \-\-edit """Wired connection 1""" \-\-tab 3
+Edit the IPv4 settings of a wired connection.
+.TP
+.B tde\-nmctl \-\-list
+Show what NetworkManager is doing.
+.SH SEE ALSO
+.BR tde\-nmctl\-tray (1),
+.BR NetworkManager (8),
+.BR nmcli (1),
+.BR nm\-settings (5),
+.BR tdecmshell (1)
+.PP
+The handbook:
+.B khelpcenter help:/tde\-nmctl
+.SH NOTES
+tde\-nmctl was written with the help of an AI coding assistant ("vibe
+coded") and has not been reviewed line by line by a person. It comes with
+no warranty; please report problems at
+.UR https://github.com/Yjlion/tde-nmctl/issues
+.UE .
+.SH AUTHORS
+tde\-nmctl developers,
+.UR https://github.com/Yjlion/tde-nmctl
+.UE

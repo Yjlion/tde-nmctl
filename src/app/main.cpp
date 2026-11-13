@@ -16,6 +16,7 @@
 #include "mainwindow.h"
 #include "mainwidget.h"
 #include "connectionlist.h"
+#include "devicelist.h"
 #include "connectiondialog.h"
 #include "nmclient.h"
 #include "nmtext.h"
@@ -38,7 +39,7 @@ static TDECmdLineOptions options[] = {
 	{ "new <type>", I18N_NOOP("Create a new connection of this type (ethernet, wifi, vpn, wireguard, "
 	                          "bond, bridge, vlan, team, gsm, cdma, pppoe, infiniband, dummy) and exit"), 0 },
 	{ "tab <number>", I18N_NOOP("With --edit or --new: the tab of the editor to show first"), "0" },
-	{ "select <connection>", I18N_NOOP("Select this connection in the list"), 0 },
+	{ "select <name>", I18N_NOOP("Select this connection (or, with --page devices, this device) in the list"), 0 },
 	{ "list", I18N_NOOP("Print the devices, Wi-Fi networks and connections and exit"), 0 },
 	{ "show <connection>", I18N_NOOP("Print the settings of a connection and exit"), 0 },
 	TDECmdLineLastOption
@@ -173,8 +174,11 @@ int main(int argc, char **argv)
 
 	MainWindow *win = new MainWindow();
 	win->mainWidget()->showPage(MainWidget::pageFromString(args->getOption("page")));
-	if (args->isSet("select"))
-		win->mainWidget()->connectionList()->select(TQString::fromLocal8Bit(args->getOption("select")));
+	if (args->isSet("select")) {
+		TQString name = TQString::fromLocal8Bit(args->getOption("select"));
+		if (!win->mainWidget()->deviceList()->select(name))
+			win->mainWidget()->connectionList()->select(name);
+	}
 	app.setMainWidget(win);
 	win->show();
 	args->clear();

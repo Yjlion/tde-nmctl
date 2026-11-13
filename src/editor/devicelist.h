@@ -40,6 +40,9 @@ class DeviceList : public TQWidget
 public:
 	DeviceList(TQWidget *parent = 0, const char *name = 0);
 
+	/** selects the device with this interface name */
+	bool select(const TQString &iface);
+
 public slots:
 	void reload();
 

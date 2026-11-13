@@ -7,3 +7,4 @@ debian/tde-nmctl-trinity/
 *.moc
 *.o
 /obj-*/
+doc/en/*.html

@@ -515,7 +515,7 @@ class Manager(PropObject):
                        "a{sa{sv}}o", (settings, dbus.ObjectPath(conn.path)),
                        lambda *a: None, lambda e: None)
 
-    def activate(self, conn, device=None, specific="/"):
+    def activate(self, conn, device=None, specific="/", agent_flags=0x1):
         if device is None and conn.type() in ("vpn", "wireguard"):
             ac = ActiveConnection(conn, None, specific, vpn=conn.type() == "vpn")
             cfg = IPConfig(False, ["10.8.0.6/24"], "10.8.0.1", ["10.8.0.1"])
@@ -577,7 +577,7 @@ class Manager(PropObject):
                 device.set_state(120, 7)
                 self.deactivate(ac.path, 7)
 
-            self.ask_agent(conn, "802-11-wireless-security", ["psk"], 0x1, got, failed)
+            self.ask_agent(conn, "802-11-wireless-security", ["psk"], agent_flags, got, failed)
         else:
             finish()
         self.changed()
@@ -688,9 +688,14 @@ class Manager(PropObject):
 
     @dbus.service.method(MOCK, in_signature="s")
     def ActivateById(self, cid):
+        self.ActivateByIdFlags(cid, 0x1)
+
+    @dbus.service.method(MOCK, in_signature="su")
+    def ActivateByIdFlags(self, cid, flags):
+        """flags 0x3: ask the agent for new secrets, as after a wrong password"""
         for c in self.settings.connections:
             if c.id() == cid:
-                self.activate(c)
+                self.activate(c, agent_flags=int(flags))
                 return
         raise dbus.exceptions.DBusException("no connection " + cid)
 
@@ -765,6 +770,15 @@ def setup(scenario):
         "ipv4": {"method": "manual", "address-data": dbus.Array([dbus.Dictionary(
             {"address": "10.10.0.2", "prefix": dbus.UInt32(24)}, signature="sv")], signature="a{sv}")},
         "ipv6": {"method": "ignore"}}), False)
+    st.add(conn_settings("Office LAN", "802-3-ethernet", {
+        "802-3-ethernet": {"mtu": dbus.UInt32(1500)},
+        "connection": {"autoconnect": dbus.Boolean(False), "zone": "work"},
+        "ipv4": {"method": "manual",
+                 "address-data": dbus.Array([dbus.Dictionary({"address": "10.20.30.44", "prefix": dbus.UInt32(24)},
+                                                             signature="sv")], signature="a{sv}"),
+                 "gateway": "10.20.30.1",
+                 "dns": dbus.Array([ip4("10.20.30.2"), ip4("10.20.30.3")], signature="u"),
+                 "dns-search": dbus.Array(["corp.example.com"], signature="s")}}, 1764000000), False)
     st.add(conn_settings("Mobile (LTE)", "gsm", {"gsm": {"apn": "internet", "pin-flags": dbus.UInt32(1)}}), False)
     st.add(conn_settings("Bridge br0", "bridge", {"bridge": {"stp": dbus.Boolean(True)},
                                                   "connection": {"interface-name": "br0",

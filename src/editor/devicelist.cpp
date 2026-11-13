@@ -211,7 +211,21 @@ void DeviceList::reload()
 			m_list->setSelected(item, true);
 		last = item;
 	}
+	if (!m_list->selectedItem() && m_list->firstChild())
+		m_list->setSelected(m_list->firstChild(), true);
 	showDetails();
+}
+
+bool DeviceList::select(const TQString &iface)
+{
+	for (TQListViewItem *item = m_list->firstChild(); item; item = item->nextSibling()) {
+		if (item->text(0) == iface) {
+			m_list->setSelected(item, true);
+			m_list->setCurrentItem(item);
+			return true;
+		}
+	}
+	return false;
 }
 
 void DeviceList::slotSelectionChanged()

@@ -35,6 +35,9 @@ public:
 	/** "remember in TDE Wallet" was ticked */
 	bool remember() const;
 	TQString setting() const { return m_setting; }
+	/** OK was pressed. TQDialog::done() hides the dialog before it sets
+	 *  result(), so result() is not reliable in finished() handlers. */
+	bool wasAccepted() const { return m_accepted; }
 
 protected slots:
 	virtual void slotOk();
@@ -50,6 +53,7 @@ private:
 	TQCheckBox *m_show;
 	TQCheckBox *m_remember;
 	ConnectionSettings m_conn;
+	bool m_accepted;
 };
 
 #endif

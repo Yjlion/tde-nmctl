@@ -25,6 +25,7 @@
 #include <krun.h>
 #include <kstdaction.h>
 #include <kstdguiitem.h>
+#include <tdetoolbar.h>
 
 MainWindow::MainWindow()
 	: TDEMainWindow(0, "NmctlMainWindow")
@@ -52,6 +53,8 @@ MainWindow::MainWindow()
 	              actionCollection(), "open_kcontrol");
 
 	setupGUI(Keys | Save | Create, "tde-nmctlui.rc");
+	/* like nm-connection-editor: buttons next to the list, no toolbar */
+	toolBar()->hide();
 	setAutoSaveSettings();
 	if (!initialGeometrySet())
 		resize(800, 580);

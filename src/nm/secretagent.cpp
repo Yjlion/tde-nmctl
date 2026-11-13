@@ -164,6 +164,7 @@ void SecretAgent::getSecrets(const TQT_DBusMessage &message)
 	connect(r.dialog, TQ_SIGNAL(finished()), TQ_SLOT(slotDialogFinished()));
 	m_requests << r;
 	emit secretsRequested(conn.id());
+	KDialog::centerOnScreen(r.dialog);
 	r.dialog->show();
 	KWin::forceActiveWindow(r.dialog->winId());
 }
@@ -176,7 +177,7 @@ void SecretAgent::slotDialogFinished()
 			continue;
 		Request r = *it;
 		m_requests.remove(it);
-		if (dlg->result() == TQDialog::Accepted) {
+		if (dlg->wasAccepted()) {
 			SecretMap secrets = dlg->secrets();
 			if (dlg->remember()) {
 				/* keep the user's secrets in the wallet; secrets owned by

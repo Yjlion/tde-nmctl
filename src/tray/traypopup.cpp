@@ -125,11 +125,15 @@ TrayPopup::TrayPopup(TQWidget *parent, const char *name)
 	head->addWidget(m_stateIcon);
 	TQVBoxLayout *headText = new TQVBoxLayout(head, 0);
 	m_state = new TQLabel(this);
+	m_state->setTextFormat(TQt::PlainText);
+	TQFont bold = m_state->font();
+	bold.setBold(true);
+	m_state->setFont(bold);
 	m_connectivity = new TQLabel(this);
 	m_connectivity->setEnabled(false);
 	headText->addWidget(m_state);
 	headText->addWidget(m_connectivity);
-	head->addStretch(1);
+	head->setStretchFactor(headText, 1);
 
 	TQHBoxLayout *switches = new TQHBoxLayout(l, 12);
 	m_networking = new TQCheckBox(i18n("&Networking"), this);
@@ -215,8 +219,11 @@ void TrayPopup::hideEvent(TQHideEvent *e)
 
 void TrayPopup::clearRows()
 {
-	for (NetworkRow *r = m_rows.first(); r; r = m_rows.next())
+	/* hidden at once, so they no longer count in the layouts */
+	for (NetworkRow *r = m_rows.first(); r; r = m_rows.next()) {
+		r->hide();
 		r->deleteLater();
+	}
 	m_rows.clear();
 }
 
@@ -255,13 +262,13 @@ void TrayPopup::sync()
 			vpn = true;
 	m_stateIcon->setPixmap(DesktopIcon(NMText::trayIcon(pdev, nm->state(), vpn, strength), 32));
 	if (!nm->isRunning()) {
-		m_state->setText(i18n("<b>NetworkManager is not running</b>"));
+		m_state->setText(i18n("NetworkManager is not running"));
 		m_connectivity->setText(TQString::null);
 	} else if (primary && nm->state() >= NM_STATE_CONNECTED_LOCAL) {
-		m_state->setText(i18n("<b>Connected to %1</b>").arg(esc(primary->id)));
+		m_state->setText(i18n("Connected to %1").arg(primary->id));
 		m_connectivity->setText(NMText::connectivity(nm->connectivity()));
 	} else {
-		m_state->setText("<b>" + NMText::managerState(nm->state()) + "</b>");
+		m_state->setText(NMText::managerState(nm->state()));
 		m_connectivity->setText(TQString::null);
 	}
 

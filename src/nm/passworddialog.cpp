@@ -27,7 +27,7 @@ PasswordDialog::PasswordDialog(const ConnectionSettings &conn, const TQString &s
                                const TQStringList &keys, const SecretMap &current,
                                bool walletStorage, TQWidget *parent, const char *name)
 	: KDialogBase(parent, name, false, i18n("Authentication Required"), Ok | Cancel, Ok, true),
-	  m_setting(setting), m_keys(keys), m_conn(conn)
+	  m_setting(setting), m_keys(keys), m_conn(conn), m_accepted(false)
 {
 	TQWidget *page = new TQWidget(this);
 	setMainWidget(page);
@@ -116,6 +116,7 @@ void PasswordDialog::slotOk()
 			return;
 		}
 	}
+	m_accepted = true;
 	KDialogBase::slotOk();
 }
 

@@ -124,6 +124,7 @@ void Connector::connectAccessPoint(const TQString &devicePath, const TQString &a
 	keys << (km == "none" ? "wep-key0" : "psk");
 	PasswordDialog dlg(conn, "802-11-wireless-security", keys, SecretMap(),
 	                   SecretStore::walletEnabled(), 0, "WifiPasswordDialog");
+	KDialog::centerOnScreen(&dlg);
 	KWin::forceActiveWindow(dlg.winId());
 	if (dlg.exec() != TQDialog::Accepted)
 		return;
