@@ -1,0 +1,95 @@
+.\" Manual page for tde-nmctl-tray
+.\" Copyright (C) 2026 tde-nmctl developers
+.\" This page is distributed under the terms of the GNU GPL version 2 or later.
+.TH TDE\-NMCTL\-TRAY 1 "November 2026" "tde-nmctl 0.1.0" "Trinity Desktop Environment"
+.SH NAME
+tde\-nmctl\-tray \- network status and connections in the system tray
+.SH SYNOPSIS
+.B tde\-nmctl\-tray
+.RB [ \-\-popup ]
+.RI [ "generic TDE and TQt options" ]
+.SH DESCRIPTION
+.B tde\-nmctl\-tray
+shows the state of
+.BR NetworkManager (8)
+in the system tray of the Trinity panel, like nm\-applet, nm\-tray and the
+plasma\-nm applet. It starts at login.
+.PP
+The icon shows the primary connection: a cable for wired connections, the
+signal strength for Wi\-Fi, bars for mobile broadband, a padlock when a VPN
+is connected, and a warning sign when the network has no Internet access.
+The tooltip lists the active connections.
+.PP
+A left click opens a popup with
+.IP \(bu 2
+switches for networking, Wi\-Fi and mobile broadband;
+.IP \(bu 2
+the active connections with their addresses, an information button and
+.BR Disconnect ;
+.IP \(bu 2
+the Wi\-Fi networks in range, strongest and saved networks first, with
+their security and band and a
+.B Connect
+button, and
+.B Connect to Hidden Network
+.IP \(bu 2
+the VPN connections and other saved connections that can be started now;
+.IP \(bu 2
+.BR "Edit Connections" ,
+which starts
+.BR tde\-nmctl (1).
+.PP
+Connecting to a Wi\-Fi network without a saved connection asks for its
+password and creates a connection; the password is stored in TDE Wallet.
+Enterprise (802.1X) networks open the connection editor instead.
+.PP
+The context menu (right click) has the switches,
+.BR "Connection Information" ,
+which shows the addresses, DNS servers, speed and traffic of the active
+connections, the hidden network dialog, the editor, and options for
+notifications and starting at login.
+.SH SECRET AGENT
+The tray registers as a NetworkManager
+.I secret agent
+for the user's session. When NetworkManager needs a password that belongs
+to the user, it asks the agent, which takes it from TDE Wallet (folder
+.B tde\-nmctl
+of the network wallet) or asks the user. Connections whose passwords are
+stored for all users do not need the tray.
+.SH NOTIFICATIONS
+Established, lost and failed connections and VPN changes are announced with
+TDE notifications (events of
+.BR tde\-nmctl\-tray ),
+which can be changed in the Control Center under
+.BR "System Notifications" .
+.SH TDE NETWORK MANAGER
+If TDE's older applet
+.B tdenetworkmanager
+also starts at login, the tray asks once whether to turn it off. It stays
+installed.
+.SH OPTIONS
+.TP
+.B \-\-popup
+Open the popup after starting.
+.SH FILES
+.TP
+.I ~/.trinity/share/config/tde\-nmctl\-trayrc
+.B [General] Autostart=false
+stops the tray from starting at login (also set by
+.B Start Automatically at Login
+in the menu).
+.TP
+.I /opt/trinity/share/autostart/tde\-nmctl\-tray\-autostart.desktop
+The autostart entry.
+.SH SEE ALSO
+.BR tde\-nmctl (1),
+.BR NetworkManager (8),
+.BR nmcli (1)
+.SH NOTES
+tde\-nmctl was written with the help of an AI coding assistant ("vibe
+coded") and has not been reviewed line by line by a person. It comes with
+no warranty.
+.SH AUTHORS
+tde\-nmctl developers,
+.UR https://github.com/Yjlion/tde-nmctl
+.UE

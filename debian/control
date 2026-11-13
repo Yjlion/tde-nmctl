@@ -1,0 +1,58 @@
+Source: tde-nmctl
+Section: tde
+Priority: optional
+Maintainer: Yjlion <yjlion@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               cmake,
+               tde-cmake,
+               tdelibs14-trinity-dev,
+               libtqt3-mt-dev,
+               libtqtinterface-dev,
+               libdbus-1-tqt-dev,
+               libdbus-1-dev,
+               libpolkit-tqt-dev,
+               pkgconf | pkg-config
+Standards-Version: 4.6.2
+Homepage: https://github.com/Yjlion/tde-nmctl
+Vcs-Browser: https://github.com/Yjlion/tde-nmctl
+Vcs-Git: https://github.com/Yjlion/tde-nmctl.git
+Rules-Requires-Root: no
+
+Package: tde-nmctl-trinity
+Architecture: any
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         network-manager,
+         polkit-agent-tde | polkit-1-auth-agent
+Recommends: kcontrol-trinity,
+            khelpcenter-trinity
+Suggests: tde-systemsettings-trinity,
+          tdewalletmanager-trinity,
+          network-manager-openvpn,
+          network-manager-vpnc,
+          network-manager-openconnect,
+          network-manager-l2tp,
+          network-manager-pptp,
+          network-manager-strongswan,
+          wireguard-tools,
+          modemmanager
+Description: NetworkManager front-end with tray applet and connection editor [Trinity]
+ tde-nmctl manages network connections in the Trinity Desktop Environment
+ through NetworkManager. It is modelled on network-manager-gnome (nm-applet
+ and nm-connection-editor), nm-tray and plasma-nm.
+ .
+ The tray applet shows the network state and signal strength, lists the
+ Wi-Fi networks in range, connects and disconnects with one click, asks for
+ Wi-Fi and VPN passwords, switches networking, Wi-Fi and mobile broadband on
+ and off, and shows notifications and connection details.
+ .
+ The connection editor handles wired, Wi-Fi (WEP, WPA/WPA2/WPA3 Personal and
+ Enterprise, hotspot), 802.1X, VPN (OpenVPN, vpnc, OpenConnect, L2TP, PPTP,
+ strongSwan and other plugins, import and export), WireGuard, mobile
+ broadband, DSL/PPPoE, InfiniBand, bond, bridge, team, VLAN and dummy
+ connections with their IPv4, IPv6 and proxy settings. It is available as
+ an application, as a Trinity Control Center module (Internet & Network)
+ and in System Settings.
+ .
+ Passwords that belong to the user are kept in TDE Wallet; changes that need
+ administrator rights are authorized by polkit through polkit-agent-tde.

@@ -1,0 +1,10 @@
+/build/
+debian/.debhelper/
+debian/debhelper-build-stamp
+debian/files
+debian/*.substvars
+debian/tde-nmctl-trinity/
+*.moc
+*.o
+/obj-*/
+doc/en/*.html

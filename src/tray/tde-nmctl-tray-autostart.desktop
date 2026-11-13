@@ -1,0 +1,20 @@
+[Desktop Entry]
+Encoding=UTF-8
+Type=Application
+Exec=tde-nmctl-tray
+Icon=tde-nmctl
+OnlyShowIn=TDE;
+X-TDE-autostart-after=panel
+X-TDE-autostart-phase=2
+X-TDE-StartupNotify=false
+X-TDE-UniqueApplet=true
+# Started by default. Turn it off with "Start Automatically at Login" in the
+# tray icon's menu or in the module's Settings tab, which sets
+# [General] Autostart=false in tde-nmctl-trayrc.
+X-TDE-autostart-condition=tde-nmctl-trayrc:General:Autostart:true
+
+Name=Network
+GenericName=Network Status in the System Tray
+Comment=Connect to wired, Wi-Fi and VPN networks from the system tray
+
+Categories=Network;Applet;

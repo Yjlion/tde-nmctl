@@ -1,0 +1,15 @@
+[Desktop Entry]
+Encoding=UTF-8
+Type=Application
+Exec=tde-nmctl %i %m -caption "%c"
+Icon=tde-nmctl
+DocPath=tde-nmctl/index.html
+X-DocPath=tde-nmctl/index.html
+Terminal=false
+
+Name=Network Connections
+GenericName=Network Connection Editor
+Comment=Add and edit wired, Wi-Fi, VPN and other network connections
+Keywords=network;networkmanager;wifi;wireless;ethernet;vpn;wireguard;openvpn;hotspot;bond;bridge;vlan;dsl;mobile;
+
+Categories=Qt;TDE;Settings;Network;

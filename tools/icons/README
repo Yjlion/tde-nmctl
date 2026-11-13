@@ -1,0 +1,4 @@
+Sources of the icons in ../../icons. They are written by make-icons.py;
+after changing it, regenerate:
+
+  ./make-icons.py && ./render.sh
